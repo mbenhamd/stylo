@@ -4176,7 +4176,6 @@ keyword = { values = ["fixed", "content"] }
 
 [-moz-box-align]
 struct = "xul"
-engine = "gecko"
 spec = "Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/box-align)"
 animation_type = "discrete"
 affects = "layout"
@@ -4186,7 +4185,6 @@ keyword = { values = ["stretch", "start", "center", "baseline", "end"] }
 
 [-moz-box-direction]
 struct = "xul"
-engine = "gecko"
 spec = "Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/box-direction)"
 animation_type = "discrete"
 affects = "layout"
@@ -4196,17 +4194,15 @@ keyword = { values = ["normal", "reverse"] }
 
 [-moz-box-orient]
 struct = "xul"
-engine = "gecko"
 spec = "Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/box-orient)"
 animation_type = "discrete"
 affects = "layout"
 gecko_ffi_name = "mBoxOrient"
 aliases = ["-webkit-box-orient"]
-keyword = { values = ["horizontal", "vertical"], gecko_aliases = ["inline-axis=horizontal", "block-axis=vertical"] }
+keyword = { values = ["horizontal", "vertical"], gecko_aliases = ["inline-axis=horizontal", "block-axis=vertical"], servo_aliases = ["inline-axis=horizontal", "block-axis=vertical"] }
 
 [-moz-box-pack]
 struct = "xul"
-engine = "gecko"
 spec = "Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/box-pack)"
 animation_type = "discrete"
 affects = "layout"
