@@ -1221,6 +1221,93 @@ pub trait MatchMethods: TElement {
             RestyleDamage::compute_style_difference::<Self>(old_values, new_values)
         }
     }
+
+    /// Runs the CSS transitions part of `process_animations` for a primary
+    /// style that the caller resolved outside the style traversal: starts,
+    /// reverses or cancels this element's transitions for the style change
+    /// from `old_values` to `new_values`, and returns `new_values` recascaded
+    /// with the transitions' values at the context's animation time when the
+    /// set of transitions changed. CSS animations are not processed.
+    #[cfg(feature = "servo")]
+    fn process_transitions_for_resolved_style(
+        &self,
+        context: &mut StyleContext<Self>,
+        old_values: Option<&Arc<ComputedValues>>,
+        new_values: Arc<ComputedValues>,
+    ) -> Arc<ComputedValues> {
+        use crate::animation::AnimationSetKey;
+        use crate::dom::TDocument;
+
+        let might_need_transitions_update = self.might_need_transitions_update(
+            context,
+            old_values.map(|values| &**values),
+            &new_values,
+            None,
+        );
+        let after_change_style = if might_need_transitions_update {
+            self.after_change_style(context, &new_values)
+        } else {
+            None
+        };
+
+        let key = AnimationSetKey::new_for_non_pseudo(self.as_node().opaque());
+        let shared_context = context.shared;
+        let mut animation_set = shared_context
+            .animations
+            .sets
+            .write()
+            .remove(&key)
+            .unwrap_or_default();
+        animation_set.update_transitions_for_new_style(
+            might_need_transitions_update,
+            shared_context,
+            old_values,
+            after_change_style.as_ref().unwrap_or(&new_values),
+        );
+        let changed = animation_set.dirty;
+        animation_set.dirty = false;
+        if !animation_set.is_empty() {
+            shared_context
+                .animations
+                .sets
+                .write()
+                .insert(key.clone(), animation_set);
+        }
+        if !changed {
+            return new_values;
+        }
+
+        let mut rule_node = new_values.rules().clone();
+        let declarations = shared_context.animations.get_transition_declarations(
+            &key,
+            shared_context.current_time_for_animations,
+            self.as_node().owner_doc().shared_lock(),
+        );
+        Self::replace_single_rule_node(
+            shared_context,
+            CascadeLevel::new(CascadeOrigin::Transitions),
+            LayerOrder::root(),
+            declarations.as_ref().map(|block| block.borrow_arc()),
+            &mut rule_node,
+        );
+        if rule_node == *new_values.rules() {
+            return new_values;
+        }
+        let inputs = CascadeInputs {
+            rules: Some(rule_node),
+            visited_rules: new_values.visited_rules().cloned(),
+            flags: new_values.flags.for_cascade_inputs(),
+            included_cascade_flags: RuleCascadeFlags::empty(),
+        };
+        StyleResolverForElement::new(
+            *self,
+            context,
+            RuleInclusion::All,
+            PseudoElementResolution::IfApplicable,
+        )
+        .cascade_style_and_visited_with_default_parents(inputs)
+        .0
+    }
 }
 
 impl<E: TElement> MatchMethods for E {}
