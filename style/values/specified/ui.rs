@@ -253,6 +253,9 @@ pub enum MozTheme {
 
 /// The pointer-events property
 /// https://svgwg.org/svg2-draft/interact.html#PointerEventsProperty
+///
+/// The SVG keywords parse for every engine: HTML content treats them like
+/// `auto`, and an engine that hit-tests SVG content needs them.
 #[allow(missing_docs)]
 #[derive(
     Clone,
