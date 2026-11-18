@@ -991,7 +991,12 @@ impl FontSize {
                     }
                 },
             };
-        let size = NonNegative(Self::quantize_font_size(size));
+        // Gecko quantizes computed font sizes to share font instances. Blink and WebKit keep the
+        // computed value unrounded (e.g. `font-size: 15.8667px` computes to 15.8667px, not
+        // 15.8594px), so Servo does not quantize.
+        #[cfg(feature = "gecko")]
+        let size = Self::quantize_font_size(size);
+        let size = NonNegative(size);
         computed::FontSize {
             computed_size: size,
             used_size: size,
